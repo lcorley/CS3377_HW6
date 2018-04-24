@@ -11,7 +11,7 @@
 
 #define MATRIX_WIDTH 3
 #define MATRIX_HEIGHT 5
-#define BOX_WIDTH 15
+#define BOX_WIDTH 25
 #define MATRIX_NAME_STRING "Binary File Contents"
 
 using namespace std;
@@ -106,7 +106,7 @@ int main()
 	/* Display the Matrix */
   drawCDKMatrix(myMatrix, true);
 	/*
-   * Display header information
+   * rea and Display header information
    */
 	stringstream numToString;
 	string inputString;
@@ -125,9 +125,32 @@ int main()
 	inputString = "NumRecords: " + numToString.str();
 	numToString.str("");
 	setCDKMatrixCell(myMatrix, 1, 3, inputString.c_str());
-  
-	drawCDKMatrix(myMatrix, true);    /* required  */
+	
+	//read the binary file records
+	BinaryFileRecord *myRecord = new BinaryFileRecord();
+	
+	int numRecordsRead = 0;
+	while(binInfile.read((char *) myRecord, sizeof(BinaryFileRecord)) && numRecordsRead <= 4) 
+	{
+		//read string length and display
+		stringstream ss;
+		ss << myRecord->strLength;
+		inputString = "strlen: " + ss.str();
+		ss.str(""); //clear ss
+		//fill matrix cell
+		setCDKMatrixCell(myMatrix, 2 + numRecordsRead, 1, inputString.c_str());
+		
+		//read string buffer and display
+		string dataString = myRecord->stringBuffer;
+		setCDKMatrixCell(myMatrix, 2 + numRecordsRead, 2, dataString.c_str());
+		
+		numRecordsRead++;
+	}
 
+	binInfile.close();
+	
+	drawCDKMatrix(myMatrix, true);    /* required  */
+  
   /* So we can see results, pause until a key is pressed. */
 	unsigned char x;
 	cin >> x;
