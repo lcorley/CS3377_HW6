@@ -6,6 +6,8 @@
 #include <sstream>
 #include <string>
 #include <stdint.h>
+#include <stdio.h>
+#include <iomanip>
 #include "cdk.h"
 
 
@@ -18,11 +20,11 @@ using namespace std;
 
 class BinaryFileHeader
 {
-	public:
+public:
 	
 	uint32_t magicNumber; /*Should be feedface*/
 	uint32_t versionNumber;
-	uint32_t numRecords;
+	uint64_t numRecords;
 	
 };
 
@@ -50,13 +52,6 @@ int main()
   CDKSCREEN	*cdkscreen;
   CDKMATRIX     *myMatrix;           // CDK Screen Matrix
 
-  // Remember that matrix starts out at 1,1.
-  // Since arrays start out at 0, the first entries
-  // below ("R0", and "C0") are just placeholders
-  // 
-  // Finally... make sure your arrays have enough entries given the
-  // values you choose to set for MATRIX_WIDTH and MATRIX_HEIGHT
-  // above.
 
   const char 		*rowTitles[] = {"R0", "a", "b", "c", "d", "e"};
   const char 		*columnTitles[] = {"C0", "a", "b", "c"};
@@ -104,7 +99,7 @@ int main()
 	}
 	
 	/* Display the Matrix */
-  drawCDKMatrix(myMatrix, true);
+	drawCDKMatrix(myMatrix, true);
 	/*
    * rea and Display header information
    */
@@ -128,23 +123,24 @@ int main()
 	
 	//read the binary file records
 	BinaryFileRecord *myRecord = new BinaryFileRecord();
-	
-	int numRecordsRead = 0;
-	while(binInfile.read((char *) myRecord, sizeof(BinaryFileRecord)) && numRecordsRead <= 4) 
+	//read up to 4 records
+	for (int row = 2; row < 6; row++)
 	{
-		//read string length and display
-		stringstream ss;
-		ss << myRecord->strLength;
-		inputString = "strlen: " + ss.str();
-		ss.str(""); //clear ss
-		//fill matrix cell
-		setCDKMatrixCell(myMatrix, 2 + numRecordsRead, 1, inputString.c_str());
+		if(binInfile.read((char *) myRecord, sizeof(BinaryFileRecord))); //if there are more records to read
+		{
+			//read string length and display
+			stringstream ss;
+			ss << strlen(myRecord->stringBuffer);
+			inputString = "strlen: " + ss.str();
+			ss.str(""); //clear ss
+			//fill matrix cell
+			setCDKMatrixCell(myMatrix, row, 1, inputString.c_str());
+			
+			//read string buffer and display
+			string dataString = myRecord->stringBuffer;
+			setCDKMatrixCell(myMatrix, row, 2, dataString.c_str());
+		}
 		
-		//read string buffer and display
-		string dataString = myRecord->stringBuffer;
-		setCDKMatrixCell(myMatrix, 2 + numRecordsRead, 2, dataString.c_str());
-		
-		numRecordsRead++;
 	}
 
 	binInfile.close();
