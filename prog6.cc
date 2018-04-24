@@ -2,20 +2,50 @@
  * CS 3377 Homework 6 4/23/2018*/
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <stdint.h>
 #include "cdk.h"
 
 
-#define MATRIX_WIDTH 4
-#define MATRIX_HEIGHT 3
+#define MATRIX_WIDTH 3
+#define MATRIX_HEIGHT 5
 #define BOX_WIDTH 15
-#define MATRIX_NAME_STRING "Test Matrix"
+#define MATRIX_NAME_STRING "Binary File Contents"
 
 using namespace std;
 
+class BinaryFileHeader
+{
+	public:
+	
+	uint32_t magicNumber; /*Should be feedface*/
+	uint32_t versionNumber;
+	uint32_t numRecords;
+	
+};
+
+/*
+* Records in the file have a fixed length buffer
+* that will hold a C-Style string. This is the
+* size of the fixed length buffer.
+*/
+const int maxRecordStringLength = 25;
+
+class BinaryFileRecord
+{
+public:
+	uint8_t strLength;
+	char stringBuffer[maxRecordStringLength];
+};
 
 int main()
 {
 
+  
+  //CDK window initialization
+  
   WINDOW	*window;
   CDKSCREEN	*cdkscreen;
   CDKMATRIX     *myMatrix;           // CDK Screen Matrix
@@ -28,11 +58,12 @@ int main()
   // values you choose to set for MATRIX_WIDTH and MATRIX_HEIGHT
   // above.
 
-  const char 		*rowTitles[] = {"R0", "R1", "R2", "R3", "R4", "R5"};
-  const char 		*columnTitles[] = {"C0", "C1", "C2", "C3", "C4", "C5"};
+  const char 		*rowTitles[] = {"R0", "a", "b", "c", "d", "e"};
+  const char 		*columnTitles[] = {"C0", "a", "b", "c"};
   int		boxWidths[] = {BOX_WIDTH, BOX_WIDTH, BOX_WIDTH, BOX_WIDTH, BOX_WIDTH, BOX_WIDTH};
   int		boxTypes[] = {vMIXED, vMIXED, vMIXED, vMIXED,  vMIXED,  vMIXED};
-
+  
+  
   /*
    * Initialize the Cdk screen.
    *
@@ -57,18 +88,49 @@ int main()
       _exit(1);
     }
 
-  /* Display the Matrix */
+  //read the binary file header record
+	BinaryFileHeader *myHeader = new BinaryFileHeader();
+	
+	ifstream binInfile ("cs3377.bin", ios::in | ios::binary);
+	
+	if (binInfile.is_open())
+	{
+		binInfile.read((char *) myHeader, sizeof(BinaryFileHeader));
+	}
+	else 
+	{
+		cout << "error reading binary file";
+		return 0;
+	}
+	
+	/* Display the Matrix */
   drawCDKMatrix(myMatrix, true);
-
-  /*
-   * Dipslay a message
+	/*
+   * Display header information
    */
-  setCDKMatrixCell(myMatrix, 2, 2, "Test Message");
-  drawCDKMatrix(myMatrix, true);    /* required  */
+	stringstream numToString;
+	string inputString;
+	
+	numToString << hex << myHeader->magicNumber;
+	inputString = "Magic: " + numToString.str();
+	numToString.str("");
+	setCDKMatrixCell(myMatrix, 1, 1, inputString.c_str());
+	
+	numToString << myHeader->versionNumber;
+	inputString = "Version: " + numToString.str();
+	numToString.str("");
+	setCDKMatrixCell(myMatrix, 1, 2, inputString.c_str());
+	
+	numToString << myHeader->numRecords;
+	inputString = "NumRecords: " + numToString.str();
+	numToString.str("");
+	setCDKMatrixCell(myMatrix, 1, 3, inputString.c_str());
+  
+	drawCDKMatrix(myMatrix, true);    /* required  */
 
   /* So we can see results, pause until a key is pressed. */
-  unsigned char x;
-  cin >> x;
+	unsigned char x;
+	cin >> x;
 
   // Cleanup screen
   endCDK();
